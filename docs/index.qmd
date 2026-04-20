@@ -95,9 +95,14 @@ readRDS("../output/tbl_descriptives.rds")
 ```
 **Table 1**. Baseline sample characteristics, physiological measurements and subject-specific information regarding swimming event details. Data is presented as mean ± standard deviation, standardized mean difference and 95% confidence interval.
 
-The Bayesian models captured distinct autonomic shifts driven by extreme environmental exposure and physical exertion. The models quantified differences across baseline states driven by age and sex, followed by the acute physiological reaction triggered by the cold water swimming event. Overall, the distance of the swim and the use of a wetsuit did not yield pd values exceeding the threshold for a suggestive effect on any of the measured cardiovascular parameters. This indicates a physiological ceiling effect where the initial cold shock response and the exertion of immersion saturate the autonomic regulatory pathways, rendering additional environmental protection or prolonged exposure duration negligible in altering the immediate post-swim physiological state.
+## Cardiac autonomic dynamics and Cold water exposure
 
-## Time domain parameters
+The Bayesian models captured distinct autonomic shifts driven by extreme environmental exposure and physical exertion. The models quantified differences across baseline states driven by age and sex, followed by the acute physiological reaction triggered by the cold water swimming event. Overall, the distance of the swim and the use of a wetsuit did not yield pd values exceeding the threshold for a suggestive effect on any of the measured cardiovascular parameters. This indicates a physiological ceiling effect where the initial cold shock response and the exertion of immersion saturate the autonomic regulatory pathways, rendering additional environmental protection or prolonged exposure duration negligible in altering the immediate post-swim physiological state. This effects can be observed in Figure 1.
+
+![](fig_1.png){width=100%} 
+**Figure 1**. Marginal model-predicted cardiac autonomic dynamics in response to cold water exposure, conditional to sex and age. All estimates are adjusted for confounding factors. Data is presented as median and 95% highest credible interval.
+
+### Time domain parameters
 
 The physiological data demonstrated a certain decline in the standard metrics of heart rate variability following the cold water swim. The model estimates established a certain reduction in the mean interval between consecutive R-waves ($\beta$ = -1.44, CI~95%~[-2.97, -0.04], pd = 97.2%, ps = 96.2%, BF~10~ = 1.56). This variable directly represents the fundamental cardiac cycle length governed by the intrinsic firing rate of the sinoatrial node. The shortening of the cardiac cycle denotes an overall assertion of sympathetic tone and a concurrent withdrawal of parasympathetic control. 
 
@@ -107,7 +112,7 @@ Baseline demographic characteristics strongly modulated these cardiac parameters
 
 Sex fundamentally altered both the baseline autonomic state and the physiological response to the stressor. At baseline, females demonstrated a certain reduction in SDNN relative to males ( $\beta$ = -0.65, CI~95%~[-1.24, -0.05], pd = 98.3%, ps = 96.3%, BF~10~ = 0.98). However, the interaction between sex and the post-swim timepoint revealed a different trajectory of physiological reactivity. Females exhibited a certain positive interaction effect for SDNN post-swim ($\beta$ = 1.19, CI~95%~[0.23, 2.11], pd = 99.2%, ps = 98.6%, BF~10~ = 2.94) and a highly suggestive positive interaction for RMSSD ($\beta$ = 0.88, CI~95%~[-0.14, 1.93], pd = 95%, ps = 93%, BF~10~ = 0.72). The positive coefficients imply that the severe post-swim reductions observed in the general cohort were substantially blunted in female participants. Physiologically, this sexual dimorphism relates directly to differing thermoregulatory mechanisms. Females typically possess a higher proportion of subcutaneous adipose tissue, which provides superior thermal insulation. This physiological barrier limits the activation of cutaneous cold receptors (such as TRPM8 channels) that trigger the massive nociceptive and sympathetic outflow characteristic of the cold shock response. Consequently, the vagal withdrawal necessary to support metabolic heat production is less extreme in females. The model captured a certain positive residual correlation between RMSSD and SDNN ($\beta$ = 0.82, CI~95%~[0.63, 0.94], pd = 100%, ps = 100%, BF~10~ = 38.61), confirming that despite varying influences, the fast and global indices of variability maintain structural collinearity.
 
-## Frequency domain parameters
+### Frequency domain parameters
 
 Spectral analysis decomposes the variance of the RR intervals into distinct frequency bands to isolate different regulatory mechanisms. The post-swim period was characterized by an indicative reduction in High Frequency power ($\beta$ = -1.07, CI~95%~[-2.73, 0.47], pd = 90.6%, ps = 88.1%, BF~10~ = 0.64). HF power operates synchronously with the respiratory cycle, mapping exactly to respiratory sinus arrhythmia. As participants engaged in intense physical exercise and confronted the cold water, respiratory rates increased and tidal volumes expanded, shifting the primary respiratory frequency outside the standard resting HF band and physically suppressing the vagal modulation of the heart via pulmonary stretch receptors.
 
@@ -115,7 +120,7 @@ The frequency components also registered baseline shifts attributed to demograph
 
 The residual structure of the frequency models revealed a certain correlation between LF and HF power ($\beta$ = 0.48, CI~95%~[0.12, 0.78], pd = 98.7%, ps = 96.7%, BF~10~ = 1.21). While rest-state physiology traditionally separates LF as a mix of sympathetic and parasympathetic activity governed by baroreflex delays, and HF as strictly vagal, severe physiological stress forces synchronous behavior. The heavy panting and erratic breathing rhythms generated by the cold shock response force mechanical coupling between the intrathoracic pressure changes and venous return, simultaneously dictating the variance across both frequency bands.
 
-## Composite autonomic indices
+### Composite autonomic indices
 
 To aggregate the individual metrics into overarching physiological states, the data were transformed into composite indices representing the Parasympathetic Nervous System (PNS), the Sympathetic Nervous System (SNS), and a total Stress index.
 
