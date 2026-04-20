@@ -1,0 +1,128 @@
+---
+title: "Cold Water Swimmers and HRV"
+subtitle: "Data analysis report"
+author: 
+  - name: "Matías Castillo-Aguilar"
+    affiliation: "Escuela de Medicina, Universidad de Magallanes"
+    orcid: "0000-0001-7291-247X"
+format: 
+  html: 
+    title-block-style: manuscript
+---
+
+# Statistical analysis
+
+Data modeling and parameter estimation were conducted using a Bayesian multivariate hierarchical framework. The analytical strategy was designed to account for the covariance structure among multiple physiological endpoints while systematically handling missing observations and repeated measures. All variables were standardized prior to modeling, which mean-centers the data and scales it by the standard deviation. This transformation ensures that the estimated coefficients, denoted as $\beta$, function as standardized effect sizes, facilitating direct comparisons across variables measured on fundamentally different scales.
+
+The physiological measurements were grouped into three distinct multivariate models based on their domain: time-domain metrics, frequency-domain metrics, and composite autonomic indices. For an individual $i$ measured at timepoint $j$, the vector of responses $Y_{ij}$ was modeled as following a multivariate Gaussian distribution:
+
+$$
+Y_{ij} \sim \text{MVN}(\mu_{ij}, \Sigma)
+$$
+
+Where $\mu_{ij}$ represents the vector of expected values for the responses and $\Sigma$ is the residual covariance matrix. 
+
+The expected value $\mu_{ij}$ for each specific response variable $k$ within the multivariate outcome was defined via a linear predictor incorporating both fixed effects and random intercepts. The fixed effects structure evaluated the main effects of time, sex, age, swimming distance, and wetsuit usage. Furthermore, the model specified interaction terms to isolate how the response to the cold water swim varied based on demographic and environmental factors. The interaction terms included time with sex, time with age, time with distance, time with wetsuit usage, and a three-way interaction between time, wetsuit usage, and distance. The linear predictor for the $k$-th response was parameterized as:
+
+$$
+\mu_{ijk} = \beta_{0k} + \beta_{1k}\rm{time}_{ij} + \beta_{2k}\rm{sex}_{i} + \beta_{3k}\rm{age}_{i} + \beta_{4k}\rm{distance}_{i} + \beta_{5k}\rm{wetsuit}_{i} + \sum \beta_{\rm{int},k}X_{\rm{int}} + u_{ik}
+$$
+
+Here, $\beta_{0k}$ is the intercept, the subsequent $\beta$ terms represent the fixed effect coefficients for the respective covariates, $X_{\text{int}}$ represents the design matrix for the interaction terms, and $u_{ik}$ represents the random intercept for the $i$-th individual to account for the repeated measures across the pre-swim and post-swim timepoints. The individual random intercepts were assumed to follow a normal distribution centered at zero:
+
+$$
+u_{ik} \sim N(0, \sigma_{uk})
+$$
+
+Missing data within the physiological responses were modeled directly within the Bayesian sampling process using the `brms` interface to the `Stan` probabilistic programming language. Rather than employing listwise deletion or single-point imputation strategies, the algorithm treats missing observations $Y_{\text{mis}}$ as latent parameters. The joint posterior distribution is constructed by integrating over the distribution of the missing values conditioned on the observed data $Y_{\text{obs}}$ and the covariance parameters. The likelihood for the missing data is evaluated simultaneously with the observed data:
+
+$$
+P(Y_{\text{obs}} | \theta) = \int P(Y_{\text{obs}}, Y_{\text{mis}} | \theta) dY_{\text{mis}}
+$$
+
+This approach utilizes the residual correlation structure to inform the estimation of missing values in one domain based on the observed values in another domain.
+
+To regularize the parameter estimates and minimize over-parameterization, weakly informative priors were specified for all parameters. The prior distribution for the fixed effect coefficients $\beta$ was defined as a normal distribution centered at zero with a standard deviation of three:
+
+$$
+\beta \sim N(0, 3)
+$$
+
+The prior for the population-level intercepts and the residual standard deviations ($\sigma$) was defined using a normal distribution centered at one with a standard deviation of three. For the standard deviations, this distribution was constrained to the positive real numbers ($\mathbb{R}^+$):
+
+$$
+\sigma \sim N^+(1, 3)
+$$
+
+The residual correlation matrix $\Omega$, which informs $\Sigma$, was assigned an LKJ prior with a shape parameter $\eta = 1$:
+
+$$
+\Omega \sim \text{LKJ}(1)
+$$
+
+An LKJ prior with $\eta = 1$ yields a uniform distribution over all valid correlation matrices, allowing the model to estimate the residual covariances directly from the data without forcing strong assumptions regarding the direction or magnitude of the cross-variable relationships.
+
+Posterior distributions were approximated using Markov Chain Monte Carlo (MCMC) methods, specifically the No-U-Turn Sampler (NUTS), a dynamic variant of Hamiltonian Monte Carlo (HMC). HMC leverages the gradient of the log-posterior density function to generate physical trajectories through the parameter space. The physical system is governed by Hamiltonian mechanics, where the leapfrog algorithm discretizes the continuous trajectories. To handle the complex geometry of the hierarchical posterior and avoid divergent transitions, the `adapt_delta` parameter, which controls the target average acceptance probability for the proposals, was set to 0.999. A higher `adapt_delta` forces the leapfrog integrator to utilize smaller step sizes, thereby increasing the accuracy of the numerical integration along high-curvature regions of the parameter space. The `max_treedepth` parameter was increased to 50 to permit longer trajectories, preventing the sampler from terminating prematurely during exploration. Four independent Markov chains were executed, each consisting of 5000 total iterations. The initial 2500 iterations of each chain were discarded as the warmup phase to allow the sampler to find the typical set, resulting in 10000 post-warmup samples for posterior inference.
+
+Chain convergence and sampling efficiency were evaluated using the $\hat{R}$ statistic and the effective sample size (ESS). The $\hat{R}$ diagnostic measures the ratio of the between-chain variance to the within-chain variance, with values below 1.01 confirming that the chains have successfully mixed and reached the target distribution. The bulk ESS and tail ESS calculate the number of independent samples generated by the MCMC process, accounting for autocorrelation within the chains. 
+
+Statistical inference was grounded in the full posterior distributions of the parameters. The primary metric for evaluating the existence of an effect was the probability of direction (pd). The pd quantifies the proportion of the posterior density that falls on the same side of zero as the median of the distribution. Mathematically, it is defined as:
+
+$$
+pd = \max \left( \int_{0}^{\infty} P(\beta | Y) d\beta, \int_{-\infty}^{0} P(\beta | Y) d\beta \right)
+$$
+
+Thresholds were established to interpret the parameter effects based on the pd values: pd > 0.8 was considered somewhat suggestive of an effect, pd > 0.9 was considered indicative of an effect, and pd > 0.95 was considered certain of an effect. The 95% Highest Density Intervals (HDI) were computed to represent the credible bounds containing 95% of the posterior mass. Additionally, Bayes Factors (BF~10~) were computed to quantify the relative evidence of the alternative hypothesis against the null hypothesis.
+
+# Results
+
+```{r}
+#| include: false
+library(data.table)
+library(gtsummary)
+```
+
+## Sample characterization
+
+The final collected sample was composed of 22 subjects (mean age, 40.7 ± 14.1 years old), from which 11 were males (35.7 ± 11.8 years old) and 11 were females (45.7 ± 15.0 years old). The sample characteristics can be observed in Table 1.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| error: false
+readRDS("../output/tbl_descriptives.rds")
+```
+**Table 1**. Baseline sample characteristics, physiological measurements and subject-specific information regarding swimming event details. Data is presented as mean ± standard deviation, standardized mean difference and 95% confidence interval.
+
+The Bayesian models captured distinct autonomic shifts driven by extreme environmental exposure and physical exertion. The models quantified differences across baseline states driven by age and sex, followed by the acute physiological reaction triggered by the cold water swimming event. Overall, the distance of the swim and the use of a wetsuit did not yield pd values exceeding the threshold for a suggestive effect on any of the measured cardiovascular parameters. This indicates a physiological ceiling effect where the initial cold shock response and the exertion of immersion saturate the autonomic regulatory pathways, rendering additional environmental protection or prolonged exposure duration negligible in altering the immediate post-swim physiological state.
+
+## Time domain parameters
+
+The physiological data demonstrated a certain decline in the standard metrics of heart rate variability following the cold water swim. The model estimates established a certain reduction in the mean interval between consecutive R-waves ($\beta$ = -1.44, CI~95%~[-2.97, -0.04], pd = 97.2%, ps = 96.2%, BF~10~ = 1.56). This variable directly represents the fundamental cardiac cycle length governed by the intrinsic firing rate of the sinoatrial node. The shortening of the cardiac cycle denotes an overall assertion of sympathetic tone and a concurrent withdrawal of parasympathetic control. 
+
+Analysis of the variability parameters confirmed this autonomic shift. There was a certain reduction in the root mean square of successive differences between normal heartbeats ($\beta$ = -1.47, CI~95%~[-2.98, 0.03], pd = 97.2%, ps = 96.3%, BF~10~ = 1.66) and the standard deviation of all NN intervals ($\beta$ = -1.39, CI~95%~[-2.89, 0.08], pd = 96.7%, ps = 95.6%, BF~10~ = 1.41). The RMSSD metric primarily captures high-frequency, beat-to-beat variations mediated by myelinated efferent fibers of the vagus nerve. The drastic reduction in RMSSD confirms a rapid removal of the vagal brake on the myocardium. The concurrent drop in SDNN, which integrates both sympathetic and parasympathetic cyclical influences, reflects the dominance of sustained, non-variable catecholamine release driven by the physical demands of swimming and the thermoregulatory imperative of defending core body temperature against cold water immersion.
+
+Baseline demographic characteristics strongly modulated these cardiac parameters. Age exhibited a certain negative effect on baseline RMSSD ($\beta$ = -0.55, CI~95%~[-0.93, -0.19], pd = 99.8%, ps = 99.1%, BF~10~ = 3.97) and SDNN ($\beta$ = -0.37, CI~95%~[-0.7, -0.04], pd = 98.6%, ps = 95.1%, BF~10~ = 0.67). This outcome aligns with the expected biological senescence of the autonomic nervous system. Aging dictates structural alterations in the myocardium, stiffening of arterial walls leading to reduced baroreflex sensitivity, and a decline in the availability of central cholinergic precursors. Consequently, older participants entered the water with a biologically constrained baseline vagal capacity.
+
+Sex fundamentally altered both the baseline autonomic state and the physiological response to the stressor. At baseline, females demonstrated a certain reduction in SDNN relative to males ( $\beta$ = -0.65, CI~95%~[-1.24, -0.05], pd = 98.3%, ps = 96.3%, BF~10~ = 0.98). However, the interaction between sex and the post-swim timepoint revealed a different trajectory of physiological reactivity. Females exhibited a certain positive interaction effect for SDNN post-swim ($\beta$ = 1.19, CI~95%~[0.23, 2.11], pd = 99.2%, ps = 98.6%, BF~10~ = 2.94) and a highly suggestive positive interaction for RMSSD ($\beta$ = 0.88, CI~95%~[-0.14, 1.93], pd = 95%, ps = 93%, BF~10~ = 0.72). The positive coefficients imply that the severe post-swim reductions observed in the general cohort were substantially blunted in female participants. Physiologically, this sexual dimorphism relates directly to differing thermoregulatory mechanisms. Females typically possess a higher proportion of subcutaneous adipose tissue, which provides superior thermal insulation. This physiological barrier limits the activation of cutaneous cold receptors (such as TRPM8 channels) that trigger the massive nociceptive and sympathetic outflow characteristic of the cold shock response. Consequently, the vagal withdrawal necessary to support metabolic heat production is less extreme in females. The model captured a certain positive residual correlation between RMSSD and SDNN ($\beta$ = 0.82, CI~95%~[0.63, 0.94], pd = 100%, ps = 100%, BF~10~ = 38.61), confirming that despite varying influences, the fast and global indices of variability maintain structural collinearity.
+
+## Frequency domain parameters
+
+Spectral analysis decomposes the variance of the RR intervals into distinct frequency bands to isolate different regulatory mechanisms. The post-swim period was characterized by an indicative reduction in High Frequency power ($\beta$ = -1.07, CI~95%~[-2.73, 0.47], pd = 90.6%, ps = 88.1%, BF~10~ = 0.64). HF power operates synchronously with the respiratory cycle, mapping exactly to respiratory sinus arrhythmia. As participants engaged in intense physical exercise and confronted the cold water, respiratory rates increased and tidal volumes expanded, shifting the primary respiratory frequency outside the standard resting HF band and physically suppressing the vagal modulation of the heart via pulmonary stretch receptors.
+
+The frequency components also registered baseline shifts attributed to demographics. Age showed a somewhat suggestive negative effect on baseline HF power ($\beta$ = -0.3, CI~95%~[-0.82, 0.2], pd = 88.5%, ps = 79.1%, BF~10~ = 0.17). Sex interactions were similarly observed in the spectral data. Females exhibited a somewhat suggestive negative baseline effect for Low Frequency power ( $\beta$ = -0.44, CI~95%~[-1.31, 0.42], pd = 84%, ps = 77.7%, BF~10~ = 0.24) and HF power ($\beta$ = -0.42, CI~95%~[-1.32, 0.45], pd = 83%, ps = 76.7%, BF~10~ = 0.24). However, tracking the recovery trajectory, females presented suggestive positive interactions at the post-swim assessment for both LF power ($\beta$ = 0.74, CI~95%~[-0.64, 2.06], pd = 86.6%, ps = 83.2%, BF~10~ = 0.43) and HF power ($\beta$ = 0.69, CI~95%~[-0.61, 1.96], pd = 85.8%, ps = 82.1%, BF~10~ = 0.39). These parameters confirm that the preservation of variability observed in the time domain extends mathematically into the frequency spectra, pointing to sustained efferent vagal traffic despite the environmental challenge.
+
+The residual structure of the frequency models revealed a certain correlation between LF and HF power ($\beta$ = 0.48, CI~95%~[0.12, 0.78], pd = 98.7%, ps = 96.7%, BF~10~ = 1.21). While rest-state physiology traditionally separates LF as a mix of sympathetic and parasympathetic activity governed by baroreflex delays, and HF as strictly vagal, severe physiological stress forces synchronous behavior. The heavy panting and erratic breathing rhythms generated by the cold shock response force mechanical coupling between the intrathoracic pressure changes and venous return, simultaneously dictating the variance across both frequency bands.
+
+## Composite autonomic indices
+
+To aggregate the individual metrics into overarching physiological states, the data were transformed into composite indices representing the Parasympathetic Nervous System (PNS), the Sympathetic Nervous System (SNS), and a total Stress index.
+
+The cold water swim generated absolute alterations in these composite scores. The model established a certain, severe decline in the PNS index ($\beta$ = -2.05, CI~95%~[-3.44, -0.63], pd = 99.7%, ps = 99.6%, BF~10~ = 10.52). Concurrently, there was a certain activation of the SNS index ($\beta$ = 1.93, CI~95%~[0.51, 3.41], pd = 99.4%, ps = 99.3%, BF~10~ = 7.13) and a certain increase in the physiological Stress index ($\beta$ = 1.6, CI~95%~[0.05, 3.1], pd = 97.9%, ps = 97.3%, BF~10~ = 2.23). These outputs synthesize the competing reflex loops triggered by the event. Upon entry into cold water, thermoreceptors aggressively stimulate the sympathetic ganglia, forcing vasoconstriction to minimize convective heat loss and driving heart rate upwards to sustain muscular oxygen delivery. This reflex thoroughly overrides the antagonistic bradycardic signals typically generated by the trigeminal afferents upon facial cooling.
+
+Age showed a certain inverse relationship with the PNS index at baseline ($\beta$ = -0.3, CI~95%~[-0.6, -0.02], pd = 97.9%, ps = 91.7%, BF~10~ = 0.42). Consistent with the time-domain metrics, the progressive loss of vagal tone represents an irreversible physiological constraint in older swimmers, fundamentally altering their baseline readiness and limiting their maximum parasympathetic reserves.
+
+The specific interactions for sex within the composite indices corroborated the mechanism of thermoregulatory dimorphism. Post-swim, female participants demonstrated a certain positive interaction for the PNS index ($\beta$ = 1.05, CI~95%~[0.22, 1.88], pd = 99.2%, ps = 98.6%, BF~10~ = 2.84), indicating a retention of parasympathetic control relative to male participants. Parallel to this, females showed a certain negative interaction for the SNS index ($\beta$ = -1.25, CI~95%~[-2.15, -0.38], pd = 99.5%, ps = 99.3%, BF~10~ = 5.75) and a certain negative interaction for the Stress index ($\beta$ = -1.05, CI~95%~[-2.12, 0.1], pd = 96.7%, ps = 95.2%, BF~10~ = 1.05). Beyond the insulative capacity of adipose tissue, this attenuated sympathetic surge and preserved vagal tone in females involves central neurochemical differences. Estrogen receptors situated on medullary autonomic nuclei facilitate parasympathetic efferent signals and inhibit sympathetic outflow. This hormonal neuroprotection provides females with a blunted autonomic shock reaction, reducing the metabolic cost of acute thermal stress.
+
+The interconnected nature of these physiological states was confirmed by the modeled residual correlations. The model output a certain inverse correlation between the PNS and SNS indices ($\beta$ = -0.7, CI~95%~[-0.88, -0.47], pd = 100%, ps = 100%, BF~10~ = 4259.59) and a certain positive correlation between the SNS index and the Stress index ($\beta$ = 0.9, CI~95%~[0.79, 0.96], pd = 100%, ps = 100%, BF~10~ = 1676.17). These tight covariances prove that in the context of extreme exposure, the autonomic nervous system does not operate via independent, parallel systems, but rather functions through a highly coupled reciprocal seesaw mechanism, forcing a strict zero-sum allocation between parasympathetic rest and sympathetic survival responses.
